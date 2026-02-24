@@ -28,12 +28,14 @@ def visualize_difference(input_feature, predicted_value, X_filename="X.joblib", 
     - X_filename: The file where the feature matrix is saved.
     - y_filename: The file where the target values are saved.
     """
-    X = joblib.load(X_filename)
-    y = joblib.load(y_filename)
+    X = np.asarray(joblib.load(X_filename)).reshape(-1)
+    y = np.asarray(joblib.load(y_filename)).reshape(-1)
 
     # Find the index of the closest feature in the original dataset
+    input_feature = float(input_feature)
     closest_index = np.argmin(np.abs(X - input_feature))
-    actual_value = y[closest_index]
+    actual_value = float(y[closest_index])
+    predicted_value = float(np.asarray(predicted_value).reshape(-1)[0])
 
     # Create the plot
     fig, ax = plt.subplots()
@@ -42,11 +44,13 @@ def visualize_difference(input_feature, predicted_value, X_filename="X.joblib", 
     ax.scatter([input_feature], [predicted_value], color='green', label="Predicted Value")
 
     # Draw a line between the actual and predicted values
-    ax.plot([input_feature, input_feature], [actual_value, predicted_value], 'k--')
+    x_line = np.array([input_feature, input_feature], dtype=float)
+    y_line = np.array([actual_value, predicted_value], dtype=float)
+    ax.plot(x_line, y_line, 'k--')
 
     # Annotate the difference
     difference = predicted_value - actual_value
-    ax.text(input_feature, (actual_value + predicted_value) / 2, f"Difference: {difference[0]:.2f}", ha='center')
+    ax.text(input_feature, (actual_value + predicted_value) / 2, f"Difference: {difference:.2f}", ha='center')
 
     ax.set_xlabel("Feature")
     ax.set_ylabel("Target")
