@@ -1,16 +1,32 @@
 import numpy as np
+import pandas as pd
+import yfinance as yf
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
 import joblib
 
-def generate_synthetic_data(n_samples=100, n_features=1, noise=10, random_state=42):
+def load_commodity_data(period="5y"):
     """
-    Generates a synthetic dataset for regression.
+    Loads historical daily close prices for gold, silver, and crude oil.
     """
-    X, y = np.random.rand(n_samples, n_features) * 100, np.random.rand(n_samples) * 100
-    y = 2 * X.squeeze() + 1 + np.random.randn(n_samples) * noise
-    return X, y
+    tickers = {
+        "Gold": "GC=F",
+        "Silver": "SI=F",
+        "Oil": "CL=F",
+    }
+    data = yf.download(list(tickers.values()), period=period, interval="1d", auto_adjust=True, progress=False)
+    close = data["Close"].rename(columns={v: k for k, v in tickers.items()})
+    close = close.dropna()
+    return close
+
+def build_features_targets(close_prices):
+    """
+    Builds features (t-1) and targets (t) for next-day prediction.
+    """
+    X = close_prices.shift(1).dropna()
+    y = close_prices.loc[X.index]
+    return X.values, y.values
 
 def train_regression_model(X_train, y_train):
     """
@@ -64,8 +80,9 @@ def save_initial_datasets(X, y, X_filename="X.joblib", y_filename="y.joblib"):
     joblib.dump(y, y_filename)
 
 if __name__ == "__main__":
-    # Generate synthetic data
-    X, y = generate_synthetic_data()
+    # Load real market data
+    close_prices = load_commodity_data()
+    X, y = build_features_targets(close_prices)
 
     # Split data into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
