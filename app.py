@@ -2,6 +2,15 @@ import streamlit as st
 import numpy as np
 import joblib
 import matplotlib.pyplot as plt
+import model as model_module
+
+def retrain_model():
+    close_prices = model_module.load_commodity_data()
+    X, y = model_module.build_features_targets(close_prices)
+    model = model_module.train_regression_model(X, y)
+    model_module.save_regression_model(model)
+    model_module.save_initial_datasets(X, y)
+    return model
 
 def load_and_predict(model_filename, input_data):
     """
@@ -78,12 +87,17 @@ def create_streamlit_app():
         input_features = np.array([[gold, silver, oil]], dtype=float)
         try:
             predicted_value = load_and_predict("linear_regression_model.joblib", input_features)
-        except ValueError as exc:
-            st.error(
-                "Model/data mismatch. Please retrain by running: "
-                "`pip install -r requirements.txt` then `python model.py`."
-            )
-            st.stop()
+        except ValueError:
+            with st.spinner("Model/data mismatch. Retraining from latest data..."):
+                try:
+                    retrain_model()
+                    predicted_value = load_and_predict("linear_regression_model.joblib", input_features)
+                except Exception as exc:
+                    st.error(
+                        "Model/data mismatch and retraining failed. "
+                        "Please rerun: `pip install -r requirements.txt` then `python model.py`."
+                    )
+                    st.stop()
         predicted_value = np.asarray(predicted_value).reshape(-1)
         st.write(
             f"Predicted next-day close — Gold: {predicted_value[0]:.2f}, "
