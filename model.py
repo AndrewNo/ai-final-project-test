@@ -1,23 +1,19 @@
 import numpy as np
 import pandas as pd
-import yfinance as yf
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
 import joblib
 
-def load_commodity_data(period="5y"):
+def load_commodity_data_csv(csv_path="data/commodities.csv"):
     """
-    Loads historical daily close prices for gold, silver, and crude oil.
+    Loads historical daily close prices for gold, silver, and crude oil from a CSV.
+    CSV columns: Date, Gold, Silver, Oil
     """
-    tickers = {
-        "Gold": "GC=F",
-        "Silver": "SI=F",
-        "Oil": "CL=F",
-    }
-    data = yf.download(list(tickers.values()), period=period, interval="1d", auto_adjust=True, progress=False)
-    close = data["Close"].rename(columns={v: k for k, v in tickers.items()})
-    close = close.dropna()
+    df = pd.read_csv(csv_path)
+    df["Date"] = pd.to_datetime(df["Date"])
+    df = df.sort_values("Date")
+    close = df[["Gold", "Silver", "Oil"]].dropna()
     return close
 
 def build_features_targets(close_prices):
@@ -80,8 +76,8 @@ def save_initial_datasets(X, y, X_filename="X.joblib", y_filename="y.joblib"):
     joblib.dump(y, y_filename)
 
 if __name__ == "__main__":
-    # Load real market data
-    close_prices = load_commodity_data()
+    # Load real market data from CSV
+    close_prices = load_commodity_data_csv()
     X, y = build_features_targets(close_prices)
 
     # Split data into training and testing sets

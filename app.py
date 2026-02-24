@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import model as model_module
 
 def retrain_model():
-    close_prices = model_module.load_commodity_data()
+    close_prices = model_module.load_commodity_data_csv()
     X, y = model_module.build_features_targets(close_prices)
     model = model_module.train_regression_model(X, y)
     model_module.save_regression_model(model)
@@ -95,7 +95,8 @@ def create_streamlit_app():
                 except Exception as exc:
                     st.error(
                         "Model/data mismatch and retraining failed. "
-                        "Please rerun: `pip install -r requirements.txt` then `python model.py`."
+                        "Ensure `data/commodities.csv` exists and rerun: "
+                        "`pip install -r requirements.txt` then `python model.py`."
                     )
                     st.stop()
         predicted_value = np.asarray(predicted_value).reshape(-1)
